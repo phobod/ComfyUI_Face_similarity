@@ -17,7 +17,7 @@ The node computes the **cosine similarity** between the two embeddings and retur
 ```bash
 cd ComfyUI/custom_nodes
 git clone https://github.com/phobod/ComfyUI_Face_similarity.git
-cd comfyui-face-similarity
+cd ComfyUI_Face_similarity
 pip install -r requirements.txt
 ```
 
