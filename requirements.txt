@@ -1,0 +1,10 @@
+# Core
+insightface>=0.7.3
+numpy>=1.24.0
+opencv-python>=4.8.0
+
+# ONNX runtime — choose ONE:
+# GPU (CUDA):
+onnxruntime-gpu>=1.16.0
+# CPU only — comment out the line above and uncomment this one:
+# onnxruntime>=1.16.0
