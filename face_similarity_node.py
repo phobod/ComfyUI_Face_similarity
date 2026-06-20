@@ -89,9 +89,11 @@ class FaceSimilarityNode:
         gen_emb = get_largest_face_embedding(tensor_to_cv2(generated_image), app)
 
         if ref_emb is None:
-            return (generated_image, 0.0, "No face detected in reference image.", False)
+            msg = "No face detected in reference image."
+            return {"ui": {"text": [msg]}, "result": (generated_image, 0.0, msg, False)}
         if gen_emb is None:
-            return (generated_image, 0.0, "No face detected in generated image.", False)
+            msg = "No face detected in generated image."
+            return {"ui": {"text": [msg]}, "result": (generated_image, 0.0, msg, False)}
 
         score = cosine_similarity(ref_emb, gen_emb)
         is_same = score >= threshold
@@ -102,7 +104,8 @@ class FaceSimilarityNode:
             else f"Identity drift detected — score: {score:.3f} (threshold: {threshold})"
         )
 
-        return (generated_image, score, verdict, is_same)
+        preview = f"score: {score:.3f}  {'✓' if is_same else '✗'}"
+        return {"ui": {"text": [preview]}, "result": (generated_image, score, verdict, is_same)}
 
 
 class SaveImageIfNode:
