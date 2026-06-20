@@ -58,7 +58,7 @@ class FaceSimilarityNode:
                 "threshold": (
                     "FLOAT",
                     {
-                        "default": 0.5,
+                        "default": 0.6,
                         "min": 0.0,
                         "max": 1.0,
                         "step": 0.01,

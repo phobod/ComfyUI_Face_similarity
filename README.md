@@ -16,7 +16,7 @@ The node computes the **cosine similarity** between the two embeddings and retur
 
 ```bash
 cd ComfyUI/custom_nodes
-git clone https://github.com/YOUR_USERNAME/comfyui-face-similarity
+git clone https://github.com/phobod/ComfyUI_Face_similarity.git
 cd comfyui-face-similarity
 pip install -r requirements.txt
 ```
@@ -72,7 +72,7 @@ All models are downloaded automatically from the InsightFace model zoo.
 | `0.4 – 0.6` | Likely the same, worth checking |
 | `< 0.4` | Identity has drifted |
 
-A threshold of **0.5** is a good starting point. Adjust based on your use case.
+A threshold of **0.6** is a good starting point. Adjust based on your use case.
 
 ---
 
