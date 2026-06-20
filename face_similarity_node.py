@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import cv2
 from insightface.app import FaceAnalysis
@@ -104,10 +105,66 @@ class FaceSimilarityNode:
         return (generated_image, score, verdict, is_same)
 
 
+class SaveImageIfNode:
+    """
+    Saves an image only when the boolean flag is True.
+    Pass-throughs both image and flag for easy chaining.
+    """
+
+    def __init__(self):
+        import folder_paths
+        self.output_dir = folder_paths.get_output_directory()
+        self.type = "output"
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "image": ("IMAGE",),
+                "condition": ("BOOLEAN",),
+                "filename_prefix": ("STRING", {"default": "ComfyUI"}),
+            }
+        }
+
+    RETURN_TYPES = ("IMAGE", "BOOLEAN")
+    RETURN_NAMES = ("image", "condition")
+    FUNCTION = "save_if"
+    CATEGORY = "image"
+    OUTPUT_NODE = True
+
+    def save_if(self, image, condition: bool, filename_prefix: str):
+        if not condition:
+            print("[SaveImageIf] Condition is False — image not saved.")
+            return {"ui": {"text": ["Skipped."]}, "result": (image, False)}
+
+        from PIL import Image as PILImage
+        import folder_paths
+
+        full_output_folder, filename, counter, subfolder, filename_prefix_ = \
+            folder_paths.get_save_image_path(
+                filename_prefix,
+                self.output_dir,
+                image.shape[2],  # width
+                image.shape[1],  # height
+            )
+
+        saved = []
+        for batch_idx, img_tensor in enumerate(image):
+            arr = np.clip(255.0 * img_tensor.cpu().numpy(), 0, 255).astype(np.uint8)
+            pil_img = PILImage.fromarray(arr)
+            fname = f"{filename}_{counter + batch_idx:05}.png"
+            pil_img.save(os.path.join(full_output_folder, fname), compress_level=4)
+            saved.append({"filename": fname, "subfolder": subfolder, "type": self.type})
+            print(f"[SaveImageIf] Saved: {fname}")
+
+        return {"ui": {"images": saved}, "result": (image, True)}
+
 NODE_CLASS_MAPPINGS = {
     "FaceSimilarityNode": FaceSimilarityNode,
+    "SaveImageIfNode": SaveImageIfNode,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "FaceSimilarityNode": "Face Similarity (InsightFace)",
+    "SaveImageIfNode": "Save Image If",
 }
