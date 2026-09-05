@@ -44,9 +44,26 @@ def _unload() -> None:
         torch.cuda.empty_cache()
 
 
+def _vision_model_class():
+    """The auto class for image-to-text models, whatever transformers calls it.
+
+    ``AutoModelForVision2Seq`` was removed in transformers 5; the replacement is
+    ``AutoModelForImageTextToText``. The current name is tried first, so this
+    stops reaching for the old one as soon as nobody is on transformers 4.
+    """
+    try:
+        from transformers import AutoModelForImageTextToText
+
+        return AutoModelForImageTextToText
+    except ImportError:
+        from transformers import AutoModelForVision2Seq
+
+        return AutoModelForVision2Seq
+
+
 def _load(model_id: str, device: str):
     """Load the model, reusing the resident one when nothing relevant changed."""
-    from transformers import AutoModelForVision2Seq, AutoProcessor
+    from transformers import AutoProcessor
 
     key = (model_id, device)
     if _LOADED["key"] == key and _LOADED["model"] is not None:
@@ -55,7 +72,7 @@ def _load(model_id: str, device: str):
     _unload()
     print(f"[VLMJudge] loading {model_id} onto {device}")
     processor = AutoProcessor.from_pretrained(model_id)
-    model = AutoModelForVision2Seq.from_pretrained(
+    model = _vision_model_class().from_pretrained(
         model_id,
         device_map=device,
         dtype="auto",  # an FP8 repo carries its own; "auto" respects it
