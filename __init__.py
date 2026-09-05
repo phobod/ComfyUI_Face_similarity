@@ -1,3 +1,8 @@
+# Applied before anything else: it repairs a header that ComfyUI's own
+# HF_HUB_DISABLE_TELEMETRY setting makes malformed, which otherwise stops FP8
+# models from loading their kernels. See hf_kernel_fix.py.
+from . import hf_kernel_fix  # noqa: F401
+
 from .face_similarity_node import (
     NODE_CLASS_MAPPINGS as FACE_CLASS_MAPPINGS,
     NODE_DISPLAY_NAME_MAPPINGS as FACE_DISPLAY_MAPPINGS,
