@@ -26,6 +26,7 @@ repairs a header that stops it from loading under ComfyUI).
 
 import gc
 import json
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -42,6 +43,44 @@ def _unload() -> None:
     gc.collect()
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
+
+
+def _resolve(model_id: str) -> str:
+    """Where the weights actually are, given a repo id or a path.
+
+    Other Qwen-VL nodes download with ``snapshot_download`` into ComfyUI's own
+    ``models/LLM/Qwen-VL/<name>`` rather than the Hugging Face cache, so handing
+    a bare repo id to ``from_pretrained`` fetches a second nine-gigabyte copy of
+    something already on disk. Look there before asking the hub.
+
+    An absolute path also works, but prefer the repo id: a workflow carrying a
+    machine-specific path is not portable, and this resolution keeps the graph
+    the same on every machine.
+    """
+    candidate = Path(model_id)
+    if candidate.is_dir():
+        return str(candidate)
+
+    for directory in _local_model_dirs():
+        local = directory / model_id.split("/")[-1]
+        if local.is_dir() and any(local.glob("*.safetensors")):
+            print(f"[VLMJudge] using local weights: {local}")
+            return str(local)
+    return model_id
+
+
+def _local_model_dirs():
+    """Places a Qwen-VL model may already have been downloaded to."""
+    directories = []
+    try:
+        import folder_paths
+
+        for base in folder_paths.get_folder_paths("LLM") or []:
+            directories.append(Path(base) / "Qwen-VL")
+        directories.append(Path(folder_paths.models_dir) / "LLM" / "Qwen-VL")
+    except Exception:  # noqa: BLE001 - outside ComfyUI there is nothing to look in
+        pass
+    return directories
 
 
 def _vision_model_class():
@@ -70,10 +109,11 @@ def _load(model_id: str, device: str):
         return _LOADED["model"], _LOADED["processor"]
 
     _unload()
-    print(f"[VLMJudge] loading {model_id} onto {device}")
-    processor = AutoProcessor.from_pretrained(model_id)
+    source = _resolve(model_id)
+    print(f"[VLMJudge] loading {source} onto {device}")
+    processor = AutoProcessor.from_pretrained(source)
     model = _vision_model_class().from_pretrained(
-        model_id,
+        source,
         device_map=device,
         dtype="auto",  # an FP8 repo carries its own; "auto" respects it
         attn_implementation="sdpa",  # the only backend FP8 weights work with here
